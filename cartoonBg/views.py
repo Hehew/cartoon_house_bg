@@ -4,18 +4,20 @@ from pyquery import PyQuery as pq
 import requests
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chrome.options import Options
-chrome_options = Options()
-
-chrome_options.add_argument('--no-sandbox')#解决DevToolsActivePort文件不存在的报错
-
-chrome_options.add_argument('window-size=1920x3000') #指定浏览器分辨率
-chrome_options.add_argument('--disable-gpu') #谷歌文档提到需要加上这个属性来规避bug
-chrome_options.add_argument('--hide-scrollbars') #隐藏滚动条, 应对一些特殊页面
-chrome_options.add_argument('blink-settings=imagesEnabled=false') #不加载图片, 提升速度
-chrome_options.add_argument('--headless')
-
-brower = webdriver.Chrome(chrome_options=chrome_options)
+import re
+# from selenium.webdriver.chrome.options import Options
+# chrome_options = Options()
+#
+# chrome_options.add_argument('--no-sandbox')#解决DevToolsActivePort文件不存在的报错
+#
+# chrome_options.add_argument('window-size=1920x3000') #指定浏览器分辨率
+# chrome_options.add_argument('--disable-gpu') #谷歌文档提到需要加上这个属性来规避bug
+# chrome_options.add_argument('--hide-scrollbars') #隐藏滚动条, 应对一些特殊页面
+# chrome_options.add_argument('blink-settings=imagesEnabled=false') #不加载图片, 提升速度
+# chrome_options.add_argument('--headless')
+# brower = webdriver.Chrome(chrome_options=chrome_options)
+phantomargs = ['--load-images=false']
+brower = webdriver.PhantomJS(service_args=phantomargs)
 brower.set_window_size(1120, 550)
 wait = WebDriverWait(brower,10)
 
@@ -144,11 +146,12 @@ def get_info_parse(text):
     doc = pq(text)
     items = doc('#chapter>li').items()
     res = []
+
     for item in items:
         item = {
             'detail_url': item.find('a').attr('href'),
             'title': item.find('a').text().strip(),
-            'image_num': item.text().strip(),
+            'image_num': re.search('(\(.*?\))',item.text().strip()).group(1),
             'page_id': item.find('a').attr('id').split('_')[1]
         }
         res.append(item)
