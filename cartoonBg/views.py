@@ -150,7 +150,7 @@ def get_info_parse(text):
     for item in items:
         item = {
             'detail_url': item.find('a').attr('href'),
-            'title': item.find('a').text().strip(),
+            'title': item.find('a').attr('title').strip(),
             'image_num': re.search('(\(.*?\))',item.text().strip()).group(1),
             'page_id': item.find('a').attr('id').split('_')[1]
         }
