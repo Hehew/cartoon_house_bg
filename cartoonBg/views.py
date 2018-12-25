@@ -3,6 +3,7 @@ import json
 from pyquery import PyQuery as pq
 import requests
 from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.ui import WebDriverWait
 import re
 # from selenium.webdriver.chrome.options import Options
@@ -17,9 +18,27 @@ import re
 # chrome_options.add_argument('--headless')
 # brower = webdriver.Chrome(chrome_options=chrome_options)
 phantomargs = ['--load-images=false']
-brower = webdriver.PhantomJS(service_args=phantomargs)
+dcap = dict(DesiredCapabilities.PHANTOMJS)
+dcap["phantomjs.page.settings.userAgent"] = ('Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36')
+brower = webdriver.PhantomJS(service_args=phantomargs, desired_capabilities=dcap)
+cookie_dictionary = {
+
+}
+for item in cookie_dictionary:
+    brower.add_cookie(
+        {
+            'domain': '.u17.com',
+            'name': item,
+            'value': cookie_dictionary[item],
+            'path': '/',
+            'httponly': 'false',
+            'secure': 'false',
+            'expires': None
+        }
+    )
 brower.set_window_size(1120, 550)
 wait = WebDriverWait(brower,10)
+
 
 # Create your views here.
 def index(request):
@@ -55,7 +74,8 @@ def get_info(request):
 def search_for_keyword(request):
     try:
         keyword = request.GET.get('keyword').encode('utf-8').decode()
-        response = requests.get('http://so.u17.com/all/' + keyword + '/m0_p1.html')
+        page_num = request.GET.get('page_num').encode('utf-8').decode()
+        response = requests.get('http://so.u17.com/all/' + keyword + '/m0_p' + page_num + '.html')
         if response.status_code == 200:
             res = get_search_parse(response.text)
             return HttpResponse(json.dumps(res), content_type="application/json")
@@ -128,16 +148,23 @@ def get_search_parse(text):
             'label': item.find('.info .cf .fl').text().replace(' ','')
         }
         res.append(item)
-    return res
+    result = dict({'data': res})
+    result['page_max_num'] = doc('#comiclist > div > div.pagelist > em').text()[1: -1]
+    return result
 def hot_list_parse(text):
     doc = pq(text)
     items = doc('.hot_comic_list>li').items()
     res = []
     for item in items:
+        labels = item.find('.comic_style>.diamonds').items()
+        desc = ''
+        for label in labels:
+            desc = desc + label.text() + '/'
         item = {
             'detail_url': item.find('.hot_comic_img').attr('href'),
             'imageSrc': item.find('.hot_comic_img img').attr('xsrc'),
-            'title': item.find('.hot_comic_tit').text()
+            'title': item.find('.hot_comic_tit').text(),
+            'label': desc[0: -1]
         }
         res.append(item)
     return res
