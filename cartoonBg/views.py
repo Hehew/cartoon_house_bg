@@ -20,24 +20,11 @@ import re
 phantomargs = ['--load-images=false']
 dcap = dict(DesiredCapabilities.PHANTOMJS)
 dcap["phantomjs.page.settings.userAgent"] = ('Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36')
-brower = webdriver.PhantomJS(service_args=phantomargs, desired_capabilities=dcap)
-cookie_dictionary = {
 
+cookie_dictionary = {
+   
 }
-for item in cookie_dictionary:
-    brower.add_cookie(
-        {
-            'domain': '.u17.com',
-            'name': item,
-            'value': cookie_dictionary[item],
-            'path': '/',
-            'httponly': 'false',
-            'secure': 'false',
-            'expires': None
-        }
-    )
-brower.set_window_size(1120, 550)
-wait = WebDriverWait(brower,10)
+
 
 
 # Create your views here.
@@ -100,10 +87,24 @@ def search_for_keyword(request):
 
 def get_page_detail(request):
     try:
+        brower = webdriver.PhantomJS(service_args=phantomargs, desired_capabilities=dcap)
+        for item in cookie_dictionary:
+            brower.add_cookie(
+                {
+                    'domain': '.u17.com',
+                    'name': item,
+                    'value': cookie_dictionary[item],
+                    'path': '/',
+                    'httponly': 'false',
+                    'secure': 'false',
+                    'expires': None
+                }
+            )
+        brower.set_window_size(1120, 550)
         id = request.GET.get('id')
         brower.get('http://www.u17.com/chapter_vip/' + id + '.shtml')
-        res = get_page_detail_parse()
-
+        res = get_page_detail_parse(brower.page_source)
+        brower.quit()
         return HttpResponse(json.dumps(res), content_type="application/json")
     except Exception:
         return HttpResponse('连接超时请检查你的网络!')
@@ -193,8 +194,7 @@ def get_info_parse(text):
 #         res.append(item)
 #     return res
 
-def get_page_detail_parse():
-    html = brower.page_source
+def get_page_detail_parse(html):
     doc = pq(html)
     res = []
     items = doc('.mg_auto').items()
