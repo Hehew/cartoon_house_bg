@@ -200,6 +200,7 @@ def get_info_parse(text):
     doc = pq(text)
     items = doc('#chapter>li').items()
     res_json = {
+        'title': doc('.comic_info .left > h1').text().strip(),
         'status': re.search('状态：(.*?)class="color_green">(.*?)</span>',text).group(2),
         'clicknum': re.search('总点击：(.*?)class="color_red">(.*?)</span>',text).group(2),
         'isweeked': 'true' if doc('div.wrap.cf > div.comic_info > div.left > i') else '',
