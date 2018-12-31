@@ -6,6 +6,7 @@ from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.ui import WebDriverWait
 import re
+
 # from selenium.webdriver.chrome.options import Options
 # chrome_options = Options()
 #
@@ -19,12 +20,12 @@ import re
 # brower = webdriver.Chrome(chrome_options=chrome_options)
 phantomargs = ['--load-images=false']
 dcap = dict(DesiredCapabilities.PHANTOMJS)
-dcap["phantomjs.page.settings.userAgent"] = ('Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36')
+dcap["phantomjs.page.settings.userAgent"] = (
+'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36')
 
 cookie_dictionary = {
-   
-}
 
+}
 
 
 # Create your views here.
@@ -46,6 +47,7 @@ def index(request):
     except Exception:
         return HttpResponse('连接超时请检查你的网络!')
 
+
 def get_info(request):
     try:
         url = request.GET.get('detail_url')
@@ -57,6 +59,7 @@ def get_info(request):
             return HttpResponse('连接超时请检查你的网络!')
     except Exception:
         return HttpResponse('连接超时请检查你的网络!')
+
 
 def search_for_keyword(request):
     try:
@@ -70,6 +73,7 @@ def search_for_keyword(request):
             return HttpResponse('连接超时请检查你的网络!')
     except Exception:
         return HttpResponse('连接超时请检查你的网络!')
+
 
 # def get_page_detail(request):
 #     try:
@@ -109,6 +113,7 @@ def get_page_detail(request):
     except Exception:
         return HttpResponse('连接超时请检查你的网络!')
 
+
 def get_page_comments(request):
     try:
         id = request.GET.get('id')
@@ -120,8 +125,10 @@ def get_page_comments(request):
             return HttpResponse(json.dumps(res), content_type="application/json")
         else:
             return HttpResponse('连接超时请检查你的网络!')
-    except Exception:
+    except Exception as e:
+        print(e)
         return HttpResponse('连接超时请检查你的网络!')
+
 
 def current_week_cartoon_parse(text):
     doc = pq(text)
@@ -137,6 +144,7 @@ def current_week_cartoon_parse(text):
         res.append(item)
     return res
 
+
 def only_me_parse(text):
     doc = pq(text)
     items = doc('.comic_list_qy .cut1 .comic_all>li').items()
@@ -151,6 +159,7 @@ def only_me_parse(text):
         res.append(item)
     return res
 
+
 def get_search_parse(text):
     doc = pq(text)
     items = doc('.comiclist>ul>li').items()
@@ -160,12 +169,14 @@ def get_search_parse(text):
             'detail_url': item.find('.cover>a').attr('href'),
             'imageSrc': item.find('.cover img').attr('src'),
             'title': item.find('.info .u').attr('title'),
-            'label': item.find('.info .cf .fl').text().replace(' ','')
+            'label': item.find('.info .cf .fl').text().replace(' ', '')
         }
         res.append(item)
     result = dict({'data': res})
     result['page_max_num'] = doc('#comiclist > div > div.pagelist > em').text()[1: -1]
     return result
+
+
 def hot_list_parse(text):
     doc = pq(text)
     items = doc('.hot_comic_list>li').items()
@@ -184,6 +195,7 @@ def hot_list_parse(text):
         res.append(item)
     return res
 
+
 def get_info_parse(text):
     doc = pq(text)
     items = doc('#chapter>li').items()
@@ -191,8 +203,8 @@ def get_info_parse(text):
         'status': doc('div.info > div.top > div.cf.line2 > div:nth-child(1) > .color_green').text(),
         'clicknum': doc('div.info > div.top > div.cf.line2 > div:nth-child(4) > .color_red').text(),
         'isweeked': 'true' if doc('div.wrap.cf > div.comic_info > div.left > i') else '',
-        'author':  doc('div.wrap.cf > div.comic_info > div.right > div > div.info > a').text(),
-        'desc':  doc('#words_all > p.ti2').text()
+        'author': doc('div.wrap.cf > div.comic_info > div.right > div > div.info > a').text(),
+        'desc': doc('#words_all > p.ti2').text()
     }
     res = []
 
@@ -200,12 +212,13 @@ def get_info_parse(text):
         item = {
             'detail_url': item.find('a').attr('href'),
             'title': item.find('a').attr('title').strip(),
-            'image_num': re.search('(\(.*?\))',item.text().strip()).group(1),
+            'image_num': re.search('(\(.*?\))', item.text().strip()).group(1),
             'page_id': item.find('a').attr('id').split('_')[1]
         }
         res.append(item)
     res_json['res'] = res
     return res_json
+
 
 # def get_page_detail_parse(text):
 #     doc = pq(text)
@@ -225,6 +238,7 @@ def get_page_detail_parse(html):
         res.append(item)
     return res
 
+
 def get_page_comments_parse(html):
     doc = pq(html)
     res = []
@@ -233,8 +247,6 @@ def get_page_comments_parse(html):
         userinfos = item.find('.ncc_content_right .ncc_content_right_title .user_symbol').items()
         times = item.find('.ncc_content_right > div.ncc_content_right_title > dt > i').items()
         result = {
-            'total': re.search('"total":(\w+)?,', html).group(1),
-            'total_page': re.search('"total_page":(\w+)?,', html).group(1),
             'user_face': item.find('.ncc_content_left .user_face').attr('src'),
             'username': item.find('.ncc_content_right .ncc_content_right_title .reg_name').text(),
             'comment': item.find('.ncc_content_right .ncc_content_right_text').text()
@@ -242,12 +254,16 @@ def get_page_comments_parse(html):
         for time in times:
             if time.attr('title') != '' and time.attr('title') is not None:
                 result['time'] = time.attr('title')
-        for index,userinfo in enumerate(userinfos):
-            if index == 0:
+        for userinfo in userinfos:
+            isSex = re.search('male.gif', userinfo.attr('src'))
+            isLev = re.search('lev\w+\.png', userinfo.attr('src'))
+            if isSex:
                 result['sex'] = userinfo.attr('src')
-            if index == 1:
+            if isLev:
                 result['level'] = userinfo.attr('src')
         res.append(result)
-    return res
-
-
+    return {
+        'total': re.search('"total":(\w+)?,', html).group(1),
+        'total_page': re.search('"total_page":(\w+)?,', html).group(1),
+        'res': res
+    }
