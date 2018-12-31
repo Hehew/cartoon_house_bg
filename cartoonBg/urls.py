@@ -8,4 +8,5 @@ urlpatterns = [
     path('hot_list/', views.index),
     path('get_info/', views.get_info),
     path('get_page_detail/', views.get_page_detail),
+    path('get_page_comments/', views.get_page_comments)
 ]

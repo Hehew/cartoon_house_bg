@@ -109,6 +109,20 @@ def get_page_detail(request):
     except Exception:
         return HttpResponse('连接超时请检查你的网络!')
 
+def get_page_comments(request):
+    try:
+        id = request.GET.get('id')
+        pagenum = request.GET.get('pagenum')
+        url = 'http://www.u17.com/comment/ajax.php?mod=thread&act=get_comment_php_v4&object_type=comic&object_id=' + id + '&page=' + pagenum + '&page_size=20&face=small&comic_id=' + id
+        response = requests.get(url)
+        if response.status_code == 200:
+            res = get_page_comments_parse(response.text)
+            return HttpResponse(json.dumps(res), content_type="application/json")
+        else:
+            return HttpResponse('连接超时请检查你的网络!')
+    except Exception:
+        return HttpResponse('连接超时请检查你的网络!')
+
 def current_week_cartoon_parse(text):
     doc = pq(text)
     items = doc('.comic_list_ts .cut1 .comic_all>li').items()
@@ -173,6 +187,13 @@ def hot_list_parse(text):
 def get_info_parse(text):
     doc = pq(text)
     items = doc('#chapter>li').items()
+    res_json = {
+        'status': doc('div.info > div.top > div.cf.line2 > div:nth-child(1) > .color_green').text(),
+        'clicknum': doc('div.info > div.top > div.cf.line2 > div:nth-child(4) > .color_red').text(),
+        'isweeked': 'true' if doc('div.wrap.cf > div.comic_info > div.left > i') else '',
+        'author':  doc('div.wrap.cf > div.comic_info > div.right > div > div.info > a').text(),
+        'desc':  doc('#words_all > p.ti2').text()
+    }
     res = []
 
     for item in items:
@@ -183,7 +204,8 @@ def get_info_parse(text):
             'page_id': item.find('a').attr('id').split('_')[1]
         }
         res.append(item)
-    return res
+    res_json['res'] = res
+    return res_json
 
 # def get_page_detail_parse(text):
 #     doc = pq(text)
@@ -202,3 +224,30 @@ def get_page_detail_parse(html):
         item = item.find('img.cur_pic.lazyload').attr('xsrc')
         res.append(item)
     return res
+
+def get_page_comments_parse(html):
+    doc = pq(html)
+    res = []
+    items = doc('.ncc_content').items()
+    for item in items:
+        userinfos = item.find('.ncc_content_right .ncc_content_right_title .user_symbol').items()
+        times = item.find('.ncc_content_right > div.ncc_content_right_title > dt > i').items()
+        result = {
+            'total': re.search('"total":(\w+)?,', html).group(1),
+            'total_page': re.search('"total_page":(\w+)?,', html).group(1),
+            'user_face': item.find('.ncc_content_left .user_face').attr('src'),
+            'username': item.find('.ncc_content_right .ncc_content_right_title .reg_name').text(),
+            'comment': item.find('.ncc_content_right .ncc_content_right_text').text()
+        }
+        for time in times:
+            if time.attr('title') != '' and time.attr('title') is not None:
+                result['time'] = time.attr('title')
+        for index,userinfo in enumerate(userinfos):
+            if index == 0:
+                result['sex'] = userinfo.attr('src')
+            if index == 1:
+                result['level'] = userinfo.attr('src')
+        res.append(result)
+    return res
+
+
